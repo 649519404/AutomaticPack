@@ -1,0 +1,88 @@
+apply plugin: 'com.android.application'
+apply from: 'release.gradle'
+static def buildTime() {
+    return new Date().format("yyyyMMdd")
+}
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.0"
+    defaultConfig {
+        applicationId "com.example.automaticpack"
+        minSdkVersion 15
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+        flavorDimensions "versionCode"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("automaticPack.jks")
+            storePassword "111111"
+            keyAlias "autoPack"
+            keyPassword "111111"
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            //是否zip对齐
+            zipAlignEnabled false
+            //Proguard
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //签名
+//            signingConfig signingConfigs.release
+        }
+    }
+    productFlavors {
+        Alia {
+        }
+        Xiaomi {
+        }
+
+    }
+
+    productFlavors.all { flavor ->
+        flavor.manifestPlaceholders = [UMENG_CHANNEL_VALUE: flavor.name]
+    }
+
+
+    //***AS3.0版本 设置apk名称***
+    android.applicationVariants.all { variant ->
+        variant.outputs.all {
+            if (variant.name.endsWith("Debug")) {
+                //debug包
+                outputFileName = "$applicationId _v${defaultConfig.versionName}_"+buildTime()+"_code${defaultConfig.versionCode}_debug.apk"
+            } else {
+                //release包
+                variant.outputs.each { output ->
+                    def appName = APP_NAME
+                    def oldFile = output.outputFile
+                    def buildName
+                    def releaseApkName
+
+                    variant.productFlavors.each { product ->
+                        buildName = product.name
+                    }
+
+                    releaseApkName = appName+"${defaultConfig.versionName}" + '-' + buildName + '-' + buildTime() + '_release.apk'
+                    outputFileName = releaseApkName
+                }
+
+            }
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+}
